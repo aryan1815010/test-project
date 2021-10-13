@@ -11,6 +11,8 @@ import {
 } from "grommet";
 import { View, Hide } from "grommet-icons";
 import axios from "axios";
+import AES from "crypto-js/aes";
+
 export default function Login({ setToken, openNotif }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -27,7 +29,10 @@ export default function Login({ setToken, openNotif }) {
   const handleSignIn = useCallback(
     async (e) => {
       e.preventDefault();
-      const token = await signinUser({ email, password });
+      const token = await signinUser({
+        email,
+        password: AES.encrypt(password, "login123").toString(),
+      });
       if (token.login) {
         setToken(token);
         localStorage.setItem("token", JSON.stringify(token));
@@ -40,11 +45,19 @@ export default function Login({ setToken, openNotif }) {
   const handleSignUp = useCallback(
     async (e) => {
       e.preventDefault();
-      const token = await signupUser({ email, name, password });
-      setToken(token);
-      localStorage.setItem("token", JSON.stringify(token));
+      const token = await signupUser({
+        email,
+        name,
+        password: AES.encrypt(password, "login123").toString(),
+      });
+      if (!token.existinguser) {
+        setToken(token);
+        localStorage.setItem("token", JSON.stringify(token));
+      } else {
+        openNotif("User already exists.", "warning");
+      }
     },
-    [signupUser, email, name, password, setToken]
+    [signupUser, email, name, password, setToken, openNotif]
   );
   return (
     <Box width="medium" pad={{ vertical: "medium" }}>
