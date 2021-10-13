@@ -41,6 +41,7 @@ import Contact from "./pages/Contact";
 import Orders from "./pages/user/Orders";
 import Saved from "./pages/user/Saved";
 import Profile from "./pages/user/Profile";
+import { UserContext } from "./context/UserContext";
 
 const theme = {
   global: {
@@ -163,10 +164,9 @@ export default function App() {
                         !token.login ? (
                           <Login setToken={setToken} openNotif={openNotif} />
                         ) : (
-                          <Logout
-                            logoutUser={logoutUser}
-                            uname={token.userobj.name}
-                          />
+                          <UserContext.Provider value={token.userobj.name}>
+                            <Logout logoutUser={logoutUser} />
+                          </UserContext.Provider>
                         )
                       }
                     >
@@ -211,10 +211,9 @@ export default function App() {
                       {!token.login ? (
                         <Login setToken={setToken} openNotif={openNotif} />
                       ) : (
-                        <Logout
-                          logoutUser={logoutUser}
-                          uname={token.userobj.name}
-                        />
+                        <UserContext.Provider value={token.userobj.name}>
+                          <Logout logoutUser={logoutUser} />
+                        </UserContext.Provider>
                       )}
                     </Collapsible>
                   </Box>
