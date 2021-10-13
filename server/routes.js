@@ -1,13 +1,16 @@
 const express = require("express");
 const nodemailer = require("nodemailer");
+const AES = require("crypto-js/aes");
 const { userModel, productModel, orderModel, savedModel } = require("./models");
 const app = express();
 
 // SIGN IN
 app.post("/login", async (request, response) => {
-  const user = await userModel.findOne(request.body);
+  const user = await userModel.findOne({ email: request.body.email });
   try {
-    if (user) {
+    let userp = AES.decrypt(user.password, "login123").toString();
+    let loginp = AES.decrypt(request.body.password, "login123").toString();
+    if (userp === loginp) {
       response.send({
         login: true,
         token: "login123",
@@ -28,44 +31,49 @@ app.post("/login", async (request, response) => {
 
 // SIGN UP
 app.post("/add_user", async (request, response) => {
-  const user = new userModel(request.body);
-  let transporter = nodemailer.createTransport({
-    host: "127.0.0.1",
-    port: 25,
-    secure: false,
-  });
-  let message = {
-    from: "sender@server.com",
-    to: request.body.email,
-    subject: "Welcome, " + request.body.name,
-    text:
-      "Welcome, " +
-      request.body.name +
-      ". Activate: http://localhost:3000/activated/" +
-      user.activation_token,
-    html:
-      "<p>Welcome, " +
-      request.body.name +
-      "</p><p>Activate: <a href='http://localhost:3000/activated/" +
-      user.activation_token +
-      "'>http://localhost:3000/activated/" +
-      user.activation_token +
-      "</a></p>",
-  };
+  const existinguser = await userModel.findOne({ email: request.body.email });
   try {
-    await user.save();
-    await transporter.sendMail(message);
-    await response.send({
-      login: true,
-      token: "login123",
-      name: user.name,
-      userobj: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        activated: user.activated,
-      },
-    });
+    if (!existinguser) {
+      const user = new userModel(request.body);
+      let transporter = nodemailer.createTransport({
+        host: "127.0.0.1",
+        port: 25,
+        secure: false,
+      });
+      let message = {
+        from: "sender@server.com",
+        to: request.body.email,
+        subject: "Welcome, " + request.body.name,
+        text:
+          "Welcome, " +
+          request.body.name +
+          ". Activate: http://localhost:3000/activated/" +
+          user.activation_token,
+        html:
+          "<p>Welcome, " +
+          request.body.name +
+          "</p><p>Activate: <a href='http://localhost:3000/activated/" +
+          user.activation_token +
+          "'>http://localhost:3000/activated/" +
+          user.activation_token +
+          "</a></p>",
+      };
+      await user.save();
+      await transporter.sendMail(message);
+      await response.send({
+        login: true,
+        token: "login123",
+        existinguser: false,
+        userobj: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          activated: user.activated,
+        },
+      });
+    } else {
+      await response.send({ existinguser: true });
+    }
   } catch (error) {
     response.status(500).send(error);
   }
@@ -114,17 +122,16 @@ app.post("/edit_user", async (request, response) => {
   }
   const user = await userModel.findById(request.body._id);
   try {
-    if (
-      request.body.oldPassword !== "" &&
-      user.password !== request.body.oldPassword
-    ) {
+    let oldp = AES.decrypt(request.body.oldPassword, "edit123").toString();
+    let newp = AES.decrypt(request.body.newPassword, "edit123").toString();
+    let userp = AES.decrypt(user.password, "login123").toString();
+    if (oldp !== "" && userp !== oldp) {
       await response.send({ message: "Invalid Password", alert: "warning" });
     } else {
       user.name = request.body.name;
       user.email = request.body.email;
       user.activated = request.body.activated;
-      if (user.password === request.body.oldPassword)
-        user.password = request.body.newPassword;
+      if (userp === oldp) user.password = newp;
       user.save();
       if (request.body.activated === 0) await transporter.sendMail(message);
       await response.send({ message: "Profile Updated", alert: "ok" });
