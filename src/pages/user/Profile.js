@@ -12,6 +12,7 @@ import {
   Button,
 } from "grommet";
 import axios from "axios";
+import AES from "crypto-js/aes";
 
 export default function Profile({ openNotif, setToken }) {
   const [data, setData] = useState({
@@ -19,28 +20,29 @@ export default function Profile({ openNotif, setToken }) {
     email: "Loading",
     activated: 0,
   });
+
   const [currentData, setCurrentData] = useState({
     name: "Loading",
     email: "Loading",
     activated: 0,
   });
+
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [editEmail, setEditEmail] = useState(false);
   const [editPassword, setEditPassword] = useState(false);
   const size = useContext(ResponsiveContext);
-  let token;
+  let token = JSON.parse(localStorage.getItem("token"));
   useEffect(() => {
-    token = JSON.parse(localStorage.getItem("token"));
-    setData(token.userobj);
-    setCurrentData(token.userobj);
+    setData(JSON.parse(localStorage.getItem("token")).userobj);
+    setCurrentData(JSON.parse(localStorage.getItem("token")).userobj);
   }, [localStorage.getItem("token")]);
   const handleSubmit = async (e) => {
     e.preventDefault();
     const res = await axios.post("http://localhost:3001/edit_user/", {
       ...currentData,
-      oldPassword,
-      newPassword,
+      oldPassword: AES.encrypt(oldPassword, "edit123").toString(),
+      newPassword: AES.encrypt(newPassword, "edit123").toString(),
     });
     if (res.data.alert === "ok") {
       localStorage.setItem(
