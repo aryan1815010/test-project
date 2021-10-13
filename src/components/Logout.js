@@ -1,8 +1,11 @@
+import { useContext } from "react";
 import { Link } from "react-router-dom";
 import { Box, Anchor, Button, Text } from "grommet";
 import { FormClose } from "grommet-icons";
+import { UserContext } from "../context/UserContext";
 
-export default function Logout({ logoutUser, uname }) {
+export default function Logout({ logoutUser }) {
+  const uname = useContext(UserContext);
   return (
     <Box pad="medium" gap="small" width="small">
       <Text>Hi {uname}</Text>
