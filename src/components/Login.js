@@ -12,166 +12,160 @@ import {
 import { View, Hide } from "grommet-icons";
 import axios from "axios";
 import AES from "crypto-js/aes";
+import useForm from "../useForm";
 
 export default function Login({ setToken, openNotif }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [reveal, setReveal] = useState(false);
-  const signinUser = useCallback(async (credentials) => {
-    const res = await axios.post("http://localhost:3001/login", credentials);
-    return res.data;
-  }, []);
-  const signupUser = useCallback(async (credentials) => {
-    const res = await axios.post("http://localhost:3001/add_user", credentials);
-    return res.data;
-  }, []);
-  const handleSignIn = useCallback(
-    async (e) => {
-      e.preventDefault();
-      const token = await signinUser({
-        email,
-        password: AES.encrypt(password, "login123").toString(),
+  const signinUser = useCallback(
+    async (credentials) => {
+      const res = await axios.post("http://localhost:3001/login", {
+        ...credentials,
+        password: AES.encrypt(credentials.password, "login123").toString(),
       });
-      if (token.login) {
-        setToken(token);
-        localStorage.setItem("token", JSON.stringify(token));
+      if (res.data.login) {
+        setToken(res.data);
+        localStorage.setItem("token", JSON.stringify(res.data));
       } else {
         openNotif("Invalid login details.", "error");
       }
     },
-    [signinUser, email, password, setToken, openNotif]
+    [openNotif, setToken]
   );
-  const handleSignUp = useCallback(
-    async (e) => {
-      e.preventDefault();
-      const token = await signupUser({
-        email,
-        name,
-        password: AES.encrypt(password, "login123").toString(),
+  const signupUser = useCallback(
+    async (credentials) => {
+      const res = await axios.post("http://localhost:3001/add_user", {
+        ...credentials,
+        password: AES.encrypt(credentials.password, "login123").toString(),
       });
-      if (!token.existinguser) {
-        setToken(token);
-        localStorage.setItem("token", JSON.stringify(token));
+      if (!res.data.existinguser) {
+        setToken(res.data);
+        localStorage.setItem("token", JSON.stringify(res.data));
       } else {
         openNotif("User already exists.", "warning");
       }
     },
-    [signupUser, email, name, password, setToken, openNotif]
+    [openNotif, setToken]
   );
+  const SignInForm = () => {
+    const { values, handleChange, handleSubmit, setValues } =
+      useForm(signinUser);
+    return (
+      <Box fill align="center" justify="center" width="medium">
+        <Form
+          onReset={() => {
+            setValues({});
+          }}
+          onSubmit={handleSubmit}
+        >
+          <FormField label="Email" name="email" required>
+            <TextInput
+              name="email"
+              type="email"
+              onChange={handleChange}
+              value={values.email}
+            />
+          </FormField>
+          <FormField label="Password" name="password" required>
+            <Box direction="row" align="center">
+              <TextInput
+                plain
+                name="password"
+                focusIndicator={false}
+                type={reveal ? "text" : "password"}
+                onChange={handleChange}
+                value={values.password}
+              />
+              <Button
+                icon={reveal ? <View size="medium" /> : <Hide size="medium" />}
+                onClick={() => setReveal(!reveal)}
+              />
+            </Box>
+          </FormField>
+          <Box direction="row" justify="between" margin={{ top: "medium" }}>
+            <Button type="submit" label="Sign In" size="small" />
+            <Button
+              type="reset"
+              label={
+                <Text color="red" size="small">
+                  Reset
+                </Text>
+              }
+              size="small"
+              color="red"
+            />
+          </Box>
+        </Form>
+      </Box>
+    );
+  };
+  const SignUpForm = () => {
+    const { values, handleChange, handleSubmit, setValues } =
+      useForm(signupUser);
+    return (
+      <Box fill align="center" justify="center" width="medium">
+        <Form
+          onReset={() => {
+            setValues({});
+          }}
+          onSubmit={handleSubmit}
+        >
+          <FormField label="Name" name="name" required>
+            <TextInput
+              name="name"
+              type="text"
+              value={values.name}
+              onChange={handleChange}
+            />
+          </FormField>
+          <FormField label="Email" name="email" required>
+            <TextInput
+              name="email"
+              type="email"
+              onChange={handleChange}
+              value={values.email}
+            />
+          </FormField>
+          <FormField label="Password" name="password" required>
+            <Box direction="row" align="center">
+              <TextInput
+                plain
+                name="password"
+                focusIndicator={false}
+                type={reveal ? "text" : "password"}
+                onChange={handleChange}
+                value={values.password}
+              />
+              <Button
+                icon={reveal ? <View size="medium" /> : <Hide size="medium" />}
+                onClick={() => setReveal(!reveal)}
+              />
+            </Box>
+          </FormField>
+          <Box direction="row" justify="between" margin={{ top: "medium" }}>
+            <Button type="submit" label="Sign Up" size="small" />
+            <Button
+              type="reset"
+              label={
+                <Text color="red" size="small">
+                  Reset
+                </Text>
+              }
+              size="small"
+              color="red"
+            />
+          </Box>
+        </Form>
+      </Box>
+    );
+  };
   return (
     <Box width="medium" pad={{ vertical: "medium" }}>
       <Tabs>
         <Tab title="Sign In">
-          <Box fill align="center" justify="center" width="medium">
-            <Form
-              onReset={() => {
-                setEmail("");
-                setPassword("");
-              }}
-              onSubmit={handleSignIn}
-            >
-              <FormField label="Email" name="email" required>
-                <TextInput
-                  name="email"
-                  type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                />
-              </FormField>
-              <FormField label="Password" name="password" required>
-                <Box direction="row" align="center">
-                  <TextInput
-                    plain
-                    name="password"
-                    focusIndicator={false}
-                    type={reveal ? "text" : "password"}
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                  />
-                  <Button
-                    icon={
-                      reveal ? <View size="medium" /> : <Hide size="medium" />
-                    }
-                    onClick={() => setReveal(!reveal)}
-                  />
-                </Box>
-              </FormField>
-              <Box direction="row" justify="between" margin={{ top: "medium" }}>
-                <Button type="submit" label="Sign In" size="small" />
-                <Button
-                  type="reset"
-                  label={
-                    <Text color="red" size="small">
-                      Reset
-                    </Text>
-                  }
-                  size="small"
-                  color="red"
-                />
-              </Box>
-            </Form>
-          </Box>
+          <SignInForm />
         </Tab>
         <Tab title="Sign Up">
-          <Box fill align="center" justify="center" width="medium">
-            <Form
-              onReset={() => {
-                setEmail("");
-                setPassword("");
-                setName("");
-              }}
-              onSubmit={handleSignUp}
-            >
-              <FormField label="Name" name="name" required>
-                <TextInput
-                  name="name"
-                  type="text"
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                />
-              </FormField>
-              <FormField label="Email" name="email" required>
-                <TextInput
-                  name="email"
-                  type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                />
-              </FormField>
-              <FormField label="Password" name="password" required>
-                <Box direction="row" align="center">
-                  <TextInput
-                    plain
-                    name="password"
-                    focusIndicator={false}
-                    type={reveal ? "text" : "password"}
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                  />
-                  <Button
-                    icon={
-                      reveal ? <View size="medium" /> : <Hide size="medium" />
-                    }
-                    onClick={() => setReveal(!reveal)}
-                  />
-                </Box>
-              </FormField>
-              <Box direction="row" justify="between" margin={{ top: "medium" }}>
-                <Button type="submit" label="Sign Up" size="small" />
-                <Button
-                  type="reset"
-                  label={
-                    <Text color="red" size="small">
-                      Reset
-                    </Text>
-                  }
-                  size="small"
-                  color="red"
-                />
-              </Box>
-            </Form>
-          </Box>
+          <SignUpForm />
         </Tab>
       </Tabs>
     </Box>
