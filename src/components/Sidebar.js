@@ -25,22 +25,16 @@ export default function Sidebar({ showSidebar, cartProducts, setCart }) {
       onEsc={() => showSidebar(false)}
       responsive
     >
-      <Box width="medium" height="100%" overflow="auto">
-        <Box
-          background="light-2"
-          tag="header"
-          justify="end"
-          align="center"
-          direction="row"
-        >
+      <Box width="medium" height="100%" overflow="auto" background="background">
+        <Box tag="header" justify="end" align="center" direction="row">
           <Button icon={<FormClose />} onClick={() => showSidebar(false)} />
         </Box>
         {cartProducts.products.length < 1 ? (
-          <Box alignSelf="center" align="center" fill background="light-2">
+          <Box alignSelf="center" align="center" fill>
             <Text>Your cart is empty.</Text>
           </Box>
         ) : (
-          <Box fill background="light-2">
+          <Box fill>
             <List data={cartProducts.products}>
               {(product) => (
                 <Box
@@ -121,29 +115,15 @@ export default function Sidebar({ showSidebar, cartProducts, setCart }) {
               )}
             </List>
             <Text alignSelf="center">Total: ${cartProducts.totalAmt}</Text>
-            <Box
-              direction={size === "small" ? "column" : "row"}
-              justify="between"
-              gap="small"
-              margin="small"
-              responsive
-            >
+            <Box justify="between" gap="small" margin="small" responsive>
               <Button
                 size="small"
-                label={
-                  <Text color="black" size="small">
-                    Continue Shopping
-                  </Text>
-                }
+                label={<Text size="small">Continue Shopping</Text>}
                 onClick={() => showSidebar(false)}
               />
               <Button
                 size="small"
-                label={
-                  <Text color="black" size="small">
-                    Proceed to Checkout
-                  </Text>
-                }
+                label={<Text size="small">Proceed to Checkout</Text>}
                 onClick={() => {
                   showSidebar(false);
                   history.push("/checkout");
