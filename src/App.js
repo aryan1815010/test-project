@@ -57,7 +57,7 @@ const themes = {
       "accent-1": { dark: "#E5C453" },
       focus: { dark: "#E5C453" },
       red: { dark: "#E95065", light: "status-error" },
-      text: { dark: "#9C9C9C" },
+      //text: { dark: "#9C9C9C" },
     },
     focus: {
       outline: {
