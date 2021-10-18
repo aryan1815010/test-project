@@ -79,7 +79,7 @@ export default function Checkout({
               <FormField label="Address" name="address" required>
                 <TextArea
                   name="address"
-                  value={values.address}
+                  value={values.address || ""}
                   onChange={handleChange}
                 />
               </FormField>
