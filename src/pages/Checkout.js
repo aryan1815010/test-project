@@ -1,4 +1,4 @@
-import { useState, useContext, useCallback } from "react";
+import { useContext, useCallback } from "react";
 import { useHistory, Link } from "react-router-dom";
 import {
   Box,
@@ -16,6 +16,7 @@ import {
 } from "grommet";
 import { Trash, AddCircle, SubtractCircle } from "grommet-icons";
 import axios from "axios";
+import useForm from "../useForm";
 
 export default function Checkout({
   user,
@@ -24,52 +25,36 @@ export default function Checkout({
   totalAmt,
   openNotif,
 }) {
-  const [address, setAddress] = useState("");
   const size = useContext(ResponsiveContext);
   const history = useHistory();
-  const createOrder = useCallback(async (orderDetails) => {
-    const res = await axios.post(
-      "http://localhost:3001/add_order",
-      orderDetails
-    );
-    return res.data;
-  }, []);
-  const handleCheckout = useCallback(
-    async (e) => {
-      e.preventDefault();
+  const createOrder = useCallback(
+    async (orderDetails) => {
       const d = new Date();
       if (!user._id) openNotif("You have to login first", "warning");
       else {
         if (user.activated !== 1)
           openNotif("You have to activate your account first", "warning");
         else {
-          const token = await createOrder({
+          const token = await axios.post("http://localhost:3001/add_order", {
             user: user._id,
             products: cartProducts,
-            address: address.replace(/\n/, "<br />"),
+            address: orderDetails.address.replace(/\n/g, "<br />"),
             orderdate: d.getTime(),
             total: totalAmt,
           });
-          if (token.ordered) {
+          if (token.data.ordered) {
             setCart([]);
-            history.push("/ordered/" + token.orderid);
+            history.push("/ordered/" + token.data.orderid);
           } else {
             openNotif("Error occured. Order not placed.", "error");
           }
         }
       }
     },
-    [
-      address,
-      cartProducts,
-      createOrder,
-      history,
-      setCart,
-      totalAmt,
-      openNotif,
-      user,
-    ]
+    [cartProducts, history, setCart, openNotif, totalAmt, user]
   );
+  const { handleChange, handleSubmit, values, setValues } =
+    useForm(createOrder);
   return (
     <>
       {cartProducts.length < 1 ? (
@@ -87,15 +72,15 @@ export default function Checkout({
             <Heading level={2}>Checkout Page</Heading>
             <Form
               onReset={() => {
-                setAddress("");
+                setValues({});
               }}
-              onSubmit={handleCheckout}
+              onSubmit={handleSubmit}
             >
               <FormField label="Address" name="address" required>
                 <TextArea
                   name="address"
-                  value={address}
-                  onChange={(event) => setAddress(event.target.value)}
+                  value={values.address}
+                  onChange={handleChange}
                 />
               </FormField>
               {cartProducts.length > 0 && (
@@ -108,12 +93,12 @@ export default function Checkout({
                   <Button
                     type="reset"
                     label={
-                      <Text color="#E95065" size="small">
+                      <Text color="red" size="small">
                         Reset
                       </Text>
                     }
                     size="small"
-                    color="#E95065"
+                    color="red"
                   />
                 </Box>
               )}
