@@ -8,9 +8,12 @@ const app = express();
 app.post("/login", async (request, response) => {
   const user = await userModel.findOne({ email: request.body.email });
   try {
-    let userp = AES.decrypt(user.password, "login123").toString();
+    let userp;
+    if (user) {
+      userp = AES.decrypt(user.password, "login123").toString();
+    }
     let loginp = AES.decrypt(request.body.password, "login123").toString();
-    if (userp === loginp) {
+    if (user && userp === loginp) {
       response.send({
         login: true,
         token: "login123",
@@ -25,7 +28,7 @@ app.post("/login", async (request, response) => {
       response.send({ login: false });
     }
   } catch (error) {
-    response.status(500).send(error);
+    response.send(error);
   }
 });
 
