@@ -62,7 +62,7 @@ export default function Login({ setToken, openNotif }) {
               name="email"
               type="email"
               onChange={handleChange}
-              value={values.email}
+              value={values.email || ""}
             />
           </FormField>
           <FormField label="Password" name="password" required>
@@ -73,7 +73,7 @@ export default function Login({ setToken, openNotif }) {
                 focusIndicator={false}
                 type={reveal ? "text" : "password"}
                 onChange={handleChange}
-                value={values.password}
+                value={values.password || ""}
               />
               <Button
                 icon={reveal ? <View size="medium" /> : <Hide size="medium" />}
@@ -113,7 +113,7 @@ export default function Login({ setToken, openNotif }) {
             <TextInput
               name="name"
               type="text"
-              value={values.name}
+              value={values.name || ""}
               onChange={handleChange}
             />
           </FormField>
@@ -122,7 +122,7 @@ export default function Login({ setToken, openNotif }) {
               name="email"
               type="email"
               onChange={handleChange}
-              value={values.email}
+              value={values.email || ""}
             />
           </FormField>
           <FormField label="Password" name="password" required>
@@ -133,7 +133,7 @@ export default function Login({ setToken, openNotif }) {
                 focusIndicator={false}
                 type={reveal ? "text" : "password"}
                 onChange={handleChange}
-                value={values.password}
+                value={values.password || ""}
               />
               <Button
                 icon={reveal ? <View size="medium" /> : <Hide size="medium" />}
