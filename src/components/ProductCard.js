@@ -82,7 +82,7 @@ export default function ProductCard({
     [deleteSavedProduct, openNotif]
   );
   return (
-    <Card background="brand" elevation="none">
+    <Card background="background" elevation="none">
       <CardHeader height="small">
         <Image fit="contain" src="/assets/Wilderpeople_Ricky.jpg" />
       </CardHeader>
@@ -102,10 +102,9 @@ export default function ProductCard({
           Price: ${item && item.price.toFixed(2)}
         </Text>
       </CardBody>
-      <CardFooter pad="small" background="light-4">
+      <CardFooter pad="small" border={{ color: "light-4", side: "top" }}>
         <Button
-          icon={<Cart color="plain" />}
-          hoverIndicator
+          icon={<Cart />}
           label="Add to Cart"
           plain
           onClick={() => {
@@ -130,13 +129,11 @@ export default function ProductCard({
             icon={<Favorite color="red" />}
             label="Saved"
             plain
-            hoverIndicator
             onClick={() => handleDeleteSaved(item._id)}
           />
         ) : (
           <Button
             icon={<Favorite color="red" />}
-            hoverIndicator
             label="Save"
             plain
             onClick={() => handleSave(item._id)}

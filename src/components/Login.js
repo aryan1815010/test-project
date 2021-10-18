@@ -102,12 +102,12 @@ export default function Login({ setToken, openNotif }) {
                 <Button
                   type="reset"
                   label={
-                    <Text color="#E95065" size="small">
+                    <Text color="red" size="small">
                       Reset
                     </Text>
                   }
                   size="small"
-                  color="#E95065"
+                  color="red"
                 />
               </Box>
             </Form>
@@ -162,12 +162,12 @@ export default function Login({ setToken, openNotif }) {
                 <Button
                   type="reset"
                   label={
-                    <Text color="#E95065" size="small">
+                    <Text color="red" size="small">
                       Reset
                     </Text>
                   }
                   size="small"
-                  color="#E95065"
+                  color="red"
                 />
               </Box>
             </Form>
