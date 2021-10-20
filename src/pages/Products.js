@@ -15,56 +15,56 @@ import {
 } from "grommet";
 import axios from "axios";
 import ProductCard from "../components/ProductCard";
+import useDebounce from "../useDebounce";
 
 export default function Products({
-  setCart,
+  updateCart,
   cartProducts,
   showSidebar,
   user,
   openNotif,
 }) {
-  const [range, setRange] = useState([100, 800]);
+  const [filters, setFilters] = useState({ range: [100, 900], brand: [] });
   const size = useContext(ResponsiveContext);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [data, setData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
-  const [currentData, setCurrentData] = useState([]);
-  const [indices, setIndices] = useState([0, 6]);
+  const [data, setData] = useState({
+    products: [],
+    totalItems: 0,
+    currentPage: 0,
+  });
   const [openFilters, setOpenFilters] = useState(false);
+  const debouncedSearch = useDebounce(filters, 500);
   useEffect(() => {
-    (async () => {
-      const res = await axios.get("http://localhost:3001/products");
-      setData(res.data);
-      setFilteredData(res.data);
-      setIsLoaded(true);
-      setCurrentData(res.data.slice(0, 6));
-      setIndices([0, Math.min(6, res.data.length)]);
-    })();
-  }, []);
+    if (debouncedSearch) handlePagination({ page: 1 });
+  }, [debouncedSearch]);
 
   const handlePagination = useCallback(
-    ({ startIndex, endIndex }) => {
-      const nextData = filteredData.slice(startIndex, endIndex);
-      setCurrentData(nextData);
-      setIndices([startIndex, Math.min(endIndex, filteredData.length)]);
+    async ({ page }) => {
+      try {
+        const res = await axios
+          .get(
+            process.env.REACT_APP_BACKEND +
+              "products?size=6&page=" +
+              (page - 1) +
+              "&price=" +
+              filters.range.toString() +
+              "&brand=" +
+              filters.brand.toString()
+          )
+          .catch((err) => {
+            throw err;
+          });
+        if (res) {
+          setData(res.data);
+          setIsLoaded(true);
+        }
+      } catch (err) {
+        openNotif(err.message, "error");
+      }
     },
-    [filteredData]
+    [openNotif, filters]
   );
 
-  const onFilter = useCallback(
-    ({ range }) => {
-      setRange(range);
-      let newData = data.filter(
-        (item) => item.price > range[0] && item.price < range[1]
-      );
-      setFilteredData(newData);
-      handlePagination({
-        startIndex: 0,
-        endIndex: Math.min(6, newData.length),
-      });
-    },
-    [data, handlePagination]
-  );
   return (
     <>
       <Grid
@@ -73,7 +73,7 @@ export default function Products({
       >
         {size !== "small" ? (
           <Box border={{ color: "dark-2" }} pad="small" fill={false}>
-            <Text>Showing {filteredData.length} results.</Text>
+            <Text>Showing {data.totalItems} results.</Text>
             <Heading level={3}>Price</Heading>
             <Box gap="small">
               <Stack>
@@ -83,36 +83,48 @@ export default function Products({
                   min={100}
                   max={900}
                   step={50}
-                  values={range}
+                  values={filters.range}
                   onChange={(nextRange) => {
-                    onFilter({ range: nextRange });
+                    setFilters({ ...filters, range: nextRange });
                   }}
                 />
               </Stack>
               <Box align="center" direction="row">
                 <TextInput
-                  value={range[0]}
+                  value={filters.range[0]}
                   onChange={(e) =>
-                    onFilter({ range: [Number(e.target.value), range[1]] })
+                    setFilters({
+                      ...filters,
+                      range: [Number(e.target.value), filters.range[1]],
+                    })
                   }
                   icon={<Text>$</Text>}
                 />
                 <Text> - </Text>
                 <TextInput
-                  value={range[1]}
+                  value={filters.range[1]}
                   onChange={(e) =>
-                    onFilter({ range: [range[0], Number(e.target.value)] })
+                    setFilters({
+                      ...filters,
+                      range: [filters.range[0], Number(e.target.value)],
+                    })
                   }
                   icon={<Text>$</Text>}
                 />
               </Box>
             </Box>
-            <Heading level={3}>Placeholder</Heading>
-            <CheckBoxGroup options={["A", "B", "C"]} />
+            <Heading level={3}>Brand</Heading>
+            <CheckBoxGroup
+              options={["A", "B", "C"]}
+              value={filters.brand}
+              onChange={({ value: nextValue }) =>
+                setFilters({ ...filters, brand: nextValue })
+              }
+            />
           </Box>
         ) : (
           <Box>
-            <Text>Showing {filteredData.length} results.</Text>
+            <Text>Showing {data.totalItems} results.</Text>
             <Button
               onClick={() => setOpenFilters(!openFilters)}
               label="Filters"
@@ -121,7 +133,9 @@ export default function Products({
             />
             <Collapsible open={openFilters}>
               <Box border={{ color: "dark-2" }} margin="small" pad="small">
-                <Heading level={3}>Price</Heading>
+                <Heading level={3} responsive>
+                  Price
+                </Heading>
                 <Box gap="small">
                   <Stack>
                     <Box background="light-4" height="6px" direction="row" />
@@ -131,32 +145,46 @@ export default function Products({
                       min={100}
                       max={900}
                       step={50}
-                      values={range}
+                      values={filters.range}
                       onChange={(nextRange) => {
-                        onFilter({ range: nextRange });
+                        setFilters({ ...filters, range: nextRange });
                       }}
                     />
                   </Stack>
                   <Box align="center" direction="row">
                     <TextInput
-                      value={range[0]}
+                      value={filters.range[0]}
                       onChange={(e) =>
-                        onFilter({ range: [Number(e.target.value), range[1]] })
+                        setFilters({
+                          ...filters,
+                          range: [Number(e.target.value), filters.range[1]],
+                        })
                       }
                       icon={<Text>$</Text>}
                     />
-                    <Text> - </Text>
+                    <Text> to </Text>
                     <TextInput
-                      value={range[1]}
+                      value={filters.range[1]}
                       onChange={(e) =>
-                        onFilter({ range: [range[0], Number(e.target.value)] })
+                        setFilters({
+                          ...filters,
+                          range: [filters.range[0], Number(e.target.value)],
+                        })
                       }
                       icon={<Text>$</Text>}
                     />
                   </Box>
                 </Box>
-                <Heading level={3}>Placeholder</Heading>
-                <CheckBoxGroup options={["A", "B", "C"]} />
+                <Heading level={3} responsive>
+                  Brand
+                </Heading>
+                <CheckBoxGroup
+                  options={["A", "B", "C"]}
+                  value={filters.brand}
+                  onChange={({ value: nextValue }) =>
+                    setFilters({ ...filters, brand: nextValue })
+                  }
+                />
               </Box>
             </Collapsible>
           </Box>
@@ -164,10 +192,10 @@ export default function Products({
         <Box pad={size !== "small" ? { horizontal: "medium" } : 0}>
           <Grid columns={size !== "small" ? "1/3" : "50%"} gap="small">
             {isLoaded
-              ? currentData.map((item) => (
+              ? data.products.map((item) => (
                   <ProductCard
                     item={item}
-                    setCart={setCart}
+                    updateCart={updateCart}
                     cartProducts={cartProducts}
                     showSidebar={showSidebar}
                     user={user}
@@ -175,12 +203,12 @@ export default function Products({
                     key={item._id}
                   />
                 ))
-              : Array(6)
-                  .fill({ name: "Loading...", price: 0 })
+              : Array(3)
+                  .fill({ name: "", price: -1 })
                   .map((item, index) => (
                     <ProductCard
                       item={item}
-                      setCart={setCart}
+                      updateCart={updateCart}
                       cartProducts={cartProducts}
                       showSidebar={showSidebar}
                       user={user}
@@ -196,14 +224,20 @@ export default function Products({
             direction="row"
             pad="medium"
           >
-            <Text>
-              Showing {indices[0] + 1} - {indices[1]} of {filteredData.length}
+            <Text size="small">
+              Showing{" "}
+              {data.currentPage * 6 +
+                1 +
+                " - " +
+                (data.currentPage * 6 + data.products.length)}{" "}
+              of {data.totalItems}
             </Text>
             <Pagination
               size="small"
-              numberItems={filteredData.length}
-              onChange={handlePagination}
+              numberItems={data.totalItems}
               step={6}
+              onChange={handlePagination}
+              page={data.currentPage}
             />
           </Box>
         </Box>

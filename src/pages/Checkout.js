@@ -21,7 +21,7 @@ import useForm from "../useForm";
 export default function Checkout({
   user,
   cartProducts,
-  setCart,
+  updateCart,
   totalAmt,
   openNotif,
 }) {
@@ -35,23 +35,31 @@ export default function Checkout({
         if (user.activated !== 1)
           openNotif("You have to activate your account first", "warning");
         else {
-          const token = await axios.post("http://localhost:3001/add_order", {
-            user: user._id,
-            products: cartProducts,
-            address: orderDetails.address.replace(/\n/g, "<br />"),
-            orderdate: d.getTime(),
-            total: totalAmt,
-          });
-          if (token.data.ordered) {
-            setCart([]);
-            history.push("/ordered/" + token.data.orderid);
-          } else {
-            openNotif("Error occured. Order not placed.", "error");
+          try {
+            const token = await axios
+              .post(process.env.REACT_APP_BACKEND + "add_order", {
+                user: user._id,
+                products: cartProducts,
+                address: orderDetails.address.replace(/\n/g, "<br />"),
+                orderdate: d.getTime(),
+                total: totalAmt,
+              })
+              .catch((err) => {
+                throw err;
+              });
+            if (token && token.data.ordered) {
+              updateCart([]);
+              history.push("/ordered/" + token.data.orderid);
+            } else {
+              openNotif("Error occured. Order not placed.", "error");
+            }
+          } catch (err) {
+            openNotif("Error", "error");
           }
         }
       }
     },
-    [cartProducts, history, setCart, openNotif, totalAmt, user]
+    [cartProducts, history, updateCart, openNotif, totalAmt, user]
   );
   const { handleChange, handleSubmit, values, setValues } =
     useForm(createOrder);
@@ -138,7 +146,7 @@ export default function Checkout({
                           let newCart = cartProducts;
                           if (item1.qty === 0) newCart.splice(x, 1);
                           else newCart.splice(x, 1, item1);
-                          setCart(newCart);
+                          updateCart(newCart);
                         }}
                       />
                       <Heading
@@ -159,7 +167,7 @@ export default function Checkout({
                           item1.qty += 1;
                           let newCart = cartProducts;
                           newCart.splice(x, 1, item1);
-                          setCart(newCart);
+                          updateCart(newCart);
                         }}
                       />
                       <Button
@@ -168,7 +176,7 @@ export default function Checkout({
                           let newCart = cartProducts.filter(
                             (prod) => prod._id !== product._id
                           );
-                          setCart(newCart);
+                          updateCart(newCart);
                         }}
                         icon={<Trash color="#E95065" />}
                       />

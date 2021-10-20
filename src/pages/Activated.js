@@ -3,7 +3,7 @@ import { Box, Heading, Text } from "grommet";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 
-export default function Activated() {
+export default function Activated({ openNotif }) {
   const { token } = useParams();
   const [activated, setActivated] = useState(false);
   const [activationEmail, setActivationEmail] = useState("");
@@ -11,28 +11,40 @@ export default function Activated() {
   useEffect(
     () =>
       (async () => {
-        const res = await axios.post("http://localhost:3001/activate_user", {
-          activation_token: token,
-        });
-        if (res.data.activated) {
-          setActivated(true);
-          setActivationEmail(res.data.email);
-          if (localStorage.getItem("token")) {
-            const token = JSON.parse(localStorage.getItem("token"));
-            const userobj = token.userobj;
-            if (userobj.email === res.data.email) {
-              localStorage.setItem(
-                "token",
-                JSON.stringify({
-                  ...token,
-                  userobj: { ...userobj, activated: 1 },
-                })
-              );
+        try {
+          const res = await axios
+            .post(process.env.REACT_APP_BACKEND + "activate_user", {
+              activation_token: token,
+            })
+            .catch((err) => {
+              throw err;
+            });
+          if (res) {
+            if (res.data.activated) {
+              setActivated(true);
+              setActivationEmail(res.data.email);
+              if (localStorage.getItem("token")) {
+                const token = JSON.parse(localStorage.getItem("token"));
+                const userobj = token.userobj;
+                if (userobj.email === res.data.email) {
+                  localStorage.setItem(
+                    "token",
+                    JSON.stringify({
+                      ...token,
+                      userobj: { ...userobj, activated: 1 },
+                    })
+                  );
+                }
+              }
             }
+          } else {
+            openNotif("Error", "error");
           }
+        } catch (err) {
+          openNotif(err.message, "error");
         }
       })(),
-    [token]
+    [token, openNotif]
   );
   if (activated)
     return (

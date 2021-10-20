@@ -12,17 +12,25 @@ import {
 } from "grommet";
 import axios from "axios";
 
-export default function Thanks() {
+export default function Thanks({ openNotif }) {
   const size = useContext(ResponsiveContext);
   const { orderId } = useParams();
   const [order, setOrder] = useState({});
   useEffect(
     () =>
       (async () => {
-        const res = await axios.get("http://localhost:3001/order/" + orderId);
-        setOrder(res.data);
+        try {
+          const res = await axios
+            .get(process.env.REACT_APP_BACKEND + "order/" + orderId)
+            .catch((err) => {
+              throw err;
+            });
+          if (res) setOrder(res.data);
+        } catch (err) {
+          openNotif(err.message, "error");
+        }
       })(),
-    [orderId]
+    [orderId, openNotif]
   );
   return (
     <>
