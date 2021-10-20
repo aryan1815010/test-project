@@ -9,12 +9,14 @@ import {
   Text,
   Paragraph,
 } from "grommet";
+import { ThemeContext } from "../context/ThemeContext";
 import { Cart, Favorite } from "grommet-icons";
 import axios from "axios";
 import { useParams } from "react-router-dom";
+import Skeleton from "react-loading-skeleton";
 
 export default function Product({
-  setCart,
+  updateCart,
   cartProducts,
   showSidebar,
   user,
@@ -22,28 +24,53 @@ export default function Product({
 }) {
   const { slug } = useParams();
   const size = useContext(ResponsiveContext);
+  const { theme } = useContext(ThemeContext);
   const [unsaved, setUnsaved] = useState(true);
-  const [data, setData] = useState({ price: 0 });
+  const [data, setData] = useState({});
   useEffect(() => {
     (async () => {
-      const res = await axios.get("http://localhost:3001/product/" + slug);
-      setData(res.data);
-      if (user) {
-        const saved = await axios.get(
-          "http://localhost:3001/saved/" + user._id + "/" + res.data._id
-        );
-        setUnsaved(!saved.data.saved);
-      } else setUnsaved(true);
+      try {
+        const res = await axios
+          .get(process.env.REACT_APP_BACKEND + "product/" + slug)
+          .catch((err) => {
+            throw err;
+          });
+        if (res) setData(res.data);
+        if (res && user) {
+          const saved = await axios
+            .get(
+              process.env.REACT_APP_BACKEND +
+                "saved/" +
+                user._id +
+                "/" +
+                res.data._id
+            )
+            .catch((err) => {
+              throw err;
+            });
+          if (saved) setUnsaved(!saved.data.saved);
+        } else setUnsaved(true);
+      } catch (err) {
+        openNotif(err.message, "error");
+      }
     })();
-  }, [slug, user]);
+  }, [slug, user, openNotif]);
   const saveProduct = useCallback(
     async (itemid) => {
-      if (user._id) {
-        const res = await axios.post("http://localhost:3001/save_product", {
-          userid: user._id,
-          product: itemid,
-        });
-        return res.data;
+      try {
+        if (user._id) {
+          const res = await axios
+            .post(process.env.REACT_APP_BACKEND + "save_product", {
+              userid: user._id,
+              product: itemid,
+            })
+            .catch((err) => {
+              throw err;
+            });
+          if (res) return res.data;
+        }
+      } catch (err) {
+        console.log(err.message);
       }
     },
     [user]
@@ -52,12 +79,12 @@ export default function Product({
     async (itemid) => {
       const token = await saveProduct(itemid);
       if (user._id) {
-        if (token.saved) {
-          openNotif("Product Saved", "ok");
-          setUnsaved(false);
-        } else {
-          openNotif("Error occured. Try again later.", "error");
-        }
+        if (token) {
+          if (token.saved) {
+            openNotif("Product Saved", "ok");
+            setUnsaved(false);
+          } else openNotif("Error", "error");
+        } else openNotif("Error", "error");
       } else openNotif("You have to login first", "warning");
     },
     [saveProduct, openNotif, user]
@@ -65,10 +92,13 @@ export default function Product({
   const deleteSavedProduct = useCallback(
     async (itemid) => {
       if (user._id) {
-        const res = await axios.post("http://localhost:3001/delete_saved", {
-          userid: user._id,
-          product: itemid,
-        });
+        const res = await axios.post(
+          process.env.REACT_APP_BACKEND + "delete_saved",
+          {
+            userid: user._id,
+            product: itemid,
+          }
+        );
         return res.data;
       }
     },
@@ -93,45 +123,58 @@ export default function Product({
         pad={size !== "small" ? "medium" : "small"}
       >
         <Box border={{ color: "dark-2" }} responsive>
-          <Image
-            fit="contain"
-            fill="horizontal"
-            src="/assets/Wilderpeople_Ricky.jpg"
-          />
+          {data.name ? (
+            <Image
+              fit="contain"
+              fill="horizontal"
+              src="/assets/Wilderpeople_Ricky.jpg"
+            />
+          ) : (
+            <Skeleton width={390} height={250} />
+          )}
         </Box>
         <Box pad="small">
           <Heading margin={{ vertical: "small" }} level="2" responsive>
-            {data.name}
+            {data.name || <Skeleton />}
+          </Heading>
+          <Heading margin={{ vertical: "none" }} level="4" responsive>
+            {(data.brand && "by " + data.brand) || <Skeleton />}
           </Heading>
           <Text margin={{ bottom: "small" }}>
-            Price: ${data.price.toFixed(2)}
+            {(data.price && `Price: $${data.price.toFixed(2)}`) || <Skeleton />}
           </Text>
           <Paragraph fill>{data.description}</Paragraph>
           <Box direction={size !== "small" ? "row" : "column"} gap="medium">
-            <Button
-              size="small"
-              icon={<Cart color="#E5C453" />}
-              label="Add to Cart"
-              onClick={() => {
-                let x = cartProducts.findIndex((prod) => prod._id === data._id);
-                if (x === -1) {
-                  let item1 = data;
-                  item1.qty = 1;
-                  setCart([...cartProducts, item1]);
-                } else {
-                  let item1 = cartProducts[x];
-                  item1.qty += 1;
-                  let newCart = cartProducts;
-                  newCart.splice(x, 1, item1);
-                  setCart(newCart);
-                }
-                showSidebar(true);
-              }}
-            />
+            {data._id ? (
+              <Button
+                size="small"
+                icon={<Cart color={theme === "dark" ? "accent-1" : "plain"} />}
+                label="Add to Cart"
+                onClick={() => {
+                  let x = cartProducts.findIndex(
+                    (prod) => prod._id === data._id
+                  );
+                  if (x === -1) {
+                    let item1 = data;
+                    item1.qty = 1;
+                    updateCart([...cartProducts, item1]);
+                  } else {
+                    let item1 = cartProducts[x];
+                    item1.qty += 1;
+                    let newCart = cartProducts;
+                    newCart.splice(x, 1, item1);
+                    updateCart(newCart);
+                  }
+                  showSidebar(true);
+                }}
+              />
+            ) : (
+              <Skeleton width={158} height={36} />
+            )}
             {!unsaved ? (
               <Button
                 size="small"
-                color="#E95065"
+                color="red"
                 icon={<Favorite />}
                 primary
                 label={
@@ -143,11 +186,11 @@ export default function Product({
               />
             ) : (
               <Button
-                color="#E95065"
+                color="red"
                 size="small"
-                icon={<Favorite color="#E95065" />}
+                icon={<Favorite color="red" />}
                 label={
-                  <Text color="#E95065" size="small">
+                  <Text color="red" size="small">
                     Save
                   </Text>
                 }
