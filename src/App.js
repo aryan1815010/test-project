@@ -103,7 +103,7 @@ export default function App() {
     window.addEventListener("storage", handleToken);
     return () => window.removeEventListener("storage", handleToken);
   }, []);
-  const setCart = useCallback((arr) => {
+  const updateCart = useCallback((arr) => {
     localStorage.setItem("cartProducts", JSON.stringify(arr));
     let qty = 0,
       amt = 0;
@@ -115,19 +115,19 @@ export default function App() {
   }, []);
   const logoutUser = useCallback(() => {
     localStorage.removeItem("token");
-    setCart([]);
+    updateCart([]);
     setToken({
       login: false,
       token: "",
       userobj: { name: "" },
     });
-  }, [setCart]);
+  }, [updateCart]);
   if (
     cartProducts.products.length === 0 &&
     localStorage.getItem("cartProducts") &&
     localStorage.getItem("cartProducts") !== "[]"
   ) {
-    setCart(JSON.parse(localStorage.getItem("cartProducts")));
+    updateCart(JSON.parse(localStorage.getItem("cartProducts")));
   }
   if (!token.login && localStorage.getItem("token")) {
     const token1 = JSON.parse(localStorage.getItem("token"));
@@ -165,7 +165,7 @@ export default function App() {
                         />
                       </Nav>
                     )}
-                    {size !== "small" && <NavSearch />}
+                    {size !== "small" && <NavSearch openNotif={openNotif} />}
 
                     <Box gap="small" direction="row">
                       {size !== "small" ? (
@@ -248,7 +248,7 @@ export default function App() {
                           hoverIndicator
                         />
                       </Nav>
-                      <NavSearch />
+                      <NavSearch openNotif={openNotif} />
                     </>
                   )}
                 </Box>
@@ -256,7 +256,7 @@ export default function App() {
                   <Switch>
                     <Route path="/products">
                       <Products
-                        setCart={setCart}
+                        updateCart={updateCart}
                         cartProducts={cartProducts.products}
                         showSidebar={showSidebar}
                         user={token.userobj}
@@ -265,7 +265,7 @@ export default function App() {
                     </Route>
                     <Route path="/product/:slug">
                       <Product
-                        setCart={setCart}
+                        updateCart={updateCart}
                         cartProducts={cartProducts.products}
                         showSidebar={showSidebar}
                         user={token.userobj}
@@ -274,7 +274,7 @@ export default function App() {
                     </Route>
                     <Route path="/checkout">
                       <Checkout
-                        setCart={setCart}
+                        updateCart={updateCart}
                         cartProducts={cartProducts.products}
                         totalAmt={cartProducts.totalAmt}
                         user={token.userobj}
@@ -282,7 +282,7 @@ export default function App() {
                       />
                     </Route>
                     <Route path="/ordered/:orderId">
-                      <Thanks />
+                      <Thanks openNotif={openNotif} />
                     </Route>
                     <Route path="/login">
                       {!token.login ? (
@@ -303,11 +303,14 @@ export default function App() {
                       <Contact />
                     </Route>
                     <Route path="/activated/:token">
-                      <Activated />
+                      <Activated openNotif={openNotif} />
                     </Route>
                     <Route path="/user/orders">
                       {token.login ? (
-                        <Orders userid={token.userobj._id} />
+                        <Orders
+                          userid={token.userobj._id}
+                          openNotif={openNotif}
+                        />
                       ) : (
                         <Redirect to="/" />
                       )}
@@ -315,7 +318,7 @@ export default function App() {
                     <Route path="/user/saved">
                       {token.login ? (
                         <Saved
-                          setCart={setCart}
+                          updateCart={updateCart}
                           cartProducts={cartProducts.products}
                           showSidebar={showSidebar}
                           user={token.userobj}
@@ -341,14 +344,13 @@ export default function App() {
                   <Sidebar
                     showSidebar={showSidebar}
                     cartProducts={cartProducts}
-                    setCart={setCart}
+                    updateCart={updateCart}
                   />
                 )}
                 <Footer
                   background="background"
                   pad="small"
                   direction={size === "small" ? "column" : "row"}
-                  elevation="medium"
                 >
                   <Box align="center" direction="row" gap="xsmall">
                     <Text alignSelf="center" size="xsmall">
