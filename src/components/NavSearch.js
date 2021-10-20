@@ -3,21 +3,9 @@ import { useHistory } from "react-router-dom";
 import { Box, Image, Text, TextInput } from "grommet";
 import { Search } from "grommet-icons";
 import axios from "axios";
+import useDebounce from "../useDebounce";
 
-function useDebounce(value, delay) {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-  return debouncedValue;
-}
-
-export default function NavSearch() {
+export default function NavSearch({ openNotif }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [suggestionOpen, setSuggestionOpen] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
@@ -31,7 +19,6 @@ export default function NavSearch() {
             direction="row"
             align="center"
             gap="small"
-            border={index < list.length - 1 ? "bottom" : undefined}
             pad="small"
             responsive
           >
@@ -45,11 +32,19 @@ export default function NavSearch() {
   );
   const onChange = useCallback(
     async (value) => {
-      const res = await axios.get(
-        "http://localhost:3001/searchproducts?q=" + value
-      );
-      setSuggestionOpen(true);
-      setSuggestions(formatSuggestions(res.data));
+      try {
+        const res = await axios
+          .get(process.env.REACT_APP_BACKEND + "searchproducts?q=" + value)
+          .catch((err) => {
+            throw err;
+          });
+        if (res) {
+          setSuggestionOpen(true);
+          setSuggestions(formatSuggestions(res.data));
+        }
+      } catch (err) {
+        openNotif(err.message, "error");
+      }
     },
     [formatSuggestions]
   );
@@ -78,7 +73,7 @@ export default function NavSearch() {
       border={{
         side: "all",
       }}
-      background="brand"
+      background="background"
       style={
         suggestionOpen
           ? {

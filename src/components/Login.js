@@ -18,22 +18,32 @@ export default function Login({ setToken, openNotif }) {
   const [reveal, setReveal] = useState(false);
   const signinUser = useCallback(
     async (credentials) => {
-      const res = await axios.post("http://localhost:3001/login", {
-        ...credentials,
-        password: AES.encrypt(credentials.password, "login123").toString(),
-      });
-      if (res.data.login) {
-        setToken(res.data);
-        localStorage.setItem("token", JSON.stringify(res.data));
-      } else {
-        openNotif("Invalid login details.", "error");
+      try {
+        const res = await axios
+          .post(process.env.REACT_APP_BACKEND + "login", {
+            ...credentials,
+            password: AES.encrypt(credentials.password, "login123").toString(),
+          })
+          .catch((err) => {
+            throw err;
+          });
+        if (res) {
+          if (res.data.login) {
+            setToken(res.data);
+            localStorage.setItem("token", JSON.stringify(res.data));
+          } else {
+            openNotif("Invalid login details.", "error");
+          }
+        }
+      } catch (err) {
+        openNotif(err.message, "error");
       }
     },
     [openNotif, setToken]
   );
   const signupUser = useCallback(
     async (credentials) => {
-      const res = await axios.post("http://localhost:3001/add_user", {
+      const res = await axios.post(process.env.REACT_APP_BACKEND + "add_user", {
         ...credentials,
         password: AES.encrypt(credentials.password, "login123").toString(),
       });
@@ -50,7 +60,7 @@ export default function Login({ setToken, openNotif }) {
     const { values, handleChange, handleSubmit, setValues } =
       useForm(signinUser);
     return (
-      <Box fill align="center" justify="center" width="medium">
+      <Box fill justify="center" width="medium">
         <Form
           onReset={() => {
             setValues({});
@@ -102,14 +112,25 @@ export default function Login({ setToken, openNotif }) {
     const { values, handleChange, handleSubmit, setValues } =
       useForm(signupUser);
     return (
-      <Box fill align="center" justify="center" width="medium">
+      <Box fill justify="center" width="medium">
         <Form
           onReset={() => {
             setValues({});
           }}
           onSubmit={handleSubmit}
+          validate="change"
         >
-          <FormField label="Name" name="name" required>
+          <FormField
+            label="Name"
+            name="name"
+            validate={[
+              {
+                regexp: /^[a-z]/i,
+                message: "Please enter valid name",
+              },
+            ]}
+            required
+          >
             <TextInput
               name="name"
               type="text"
@@ -117,7 +138,17 @@ export default function Login({ setToken, openNotif }) {
               onChange={handleChange}
             />
           </FormField>
-          <FormField label="Email" name="email" required>
+          <FormField
+            label="Email"
+            name="email"
+            validate={[
+              {
+                regexp: /\S+@\S+\.\S+/,
+                message: "Please enter valid email",
+              },
+            ]}
+            required
+          >
             <TextInput
               name="email"
               type="email"
@@ -125,7 +156,20 @@ export default function Login({ setToken, openNotif }) {
               value={values.email || ""}
             />
           </FormField>
-          <FormField label="Password" name="password" required>
+          <FormField
+            label="Password"
+            name="password"
+            validate={[
+              (password) => {
+                if (password && password.length < 6)
+                  return {
+                    message: "Password must have atleast 6 characters",
+                  };
+                return undefined;
+              },
+            ]}
+            required
+          >
             <Box direction="row" align="center">
               <TextInput
                 plain
@@ -159,7 +203,7 @@ export default function Login({ setToken, openNotif }) {
     );
   };
   return (
-    <Box width="medium" pad={{ vertical: "medium" }}>
+    <Box width="medium" pad="medium">
       <Tabs>
         <Tab title="Sign In">
           <SignInForm />
