@@ -272,12 +272,29 @@ app.get("/searchproducts", async (request, response) => {
   }
 });
 
-app.get("/products", async (request, response) => {
-  const products = await productModel.find({});
+app.get("/products", async (req, res) => {
+  const { page, size, price, brand } = req.query;
+  const limit = size ? +size : 6;
+  const offset = page ? page * limit : 0;
+  let conditions = {};
+  if (price) {
+    let prices = price.split(",");
+    conditions.price = { $gte: prices[0], $lte: prices[1] };
+  }
+  if (brand) {
+    let brands = brand.split(",");
+    conditions.brand = { $in: brands };
+  }
   try {
-    response.send(products);
+    const products = await productModel.paginate(conditions, { offset, limit });
+    res.send({
+      totalItems: products.totalDocs,
+      products: products.docs,
+      totalPages: products.totalPages,
+      currentPage: products.page - 1,
+    });
   } catch (error) {
-    response.status(500).send(error);
+    res.status(500).send(error);
   }
 });
 

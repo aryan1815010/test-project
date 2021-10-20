@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const randToken = require("rand-token");
+const mongoosePaginate = require("mongoose-paginate-v2");
 
 const UserSchema = new mongoose.Schema({
   email: { type: String },
@@ -17,7 +18,10 @@ const ProductSchema = new mongoose.Schema({
   price: { type: Number },
   description: { type: String },
   slug: { type: String },
+  brand: { type: String },
 });
+
+ProductSchema.plugin(mongoosePaginate);
 
 const OrderProductSchema = new mongoose.Schema({
   name: { type: String },
