@@ -36,22 +36,37 @@ export default function Profile({ openNotif, setToken }) {
   useEffect(() => {
     setData(JSON.parse(localStorage.getItem("token")).userobj);
     setCurrentData(JSON.parse(localStorage.getItem("token")).userobj);
-  }, [localStorage.getItem("token")]);
+  }, []);
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await axios.post("http://localhost:3001/edit_user/", {
-      ...currentData,
-      oldPassword: AES.encrypt(oldPassword, "edit123").toString(),
-      newPassword: AES.encrypt(newPassword, "edit123").toString(),
-    });
-    if (res.data.alert === "ok") {
-      localStorage.setItem(
-        "token",
-        JSON.stringify({ ...token, userobj: currentData })
-      );
-      setToken({ ...token, userobj: currentData });
+    try {
+      if (JSON.parse(localStorage.getItem("token"))) {
+        const res = await axios
+          .post(process.env.REACT_APP_BACKEND + "edit_user/", {
+            ...currentData,
+            oldPassword: AES.encrypt(oldPassword, "edit123").toString(),
+            newPassword: AES.encrypt(newPassword, "edit123").toString(),
+          })
+          .catch((err) => {
+            throw err;
+          });
+        if (res) {
+          if (res.data.alert === "ok") {
+            localStorage.setItem(
+              "token",
+              JSON.stringify({ ...token, userobj: currentData })
+            );
+            setToken({ ...token, userobj: currentData });
+            setData(currentData);
+          }
+          openNotif(res.data.message, res.data.alert);
+        }
+      } else {
+        openNotif("You are not logged in!", "error");
+      }
+    } catch (err) {
+      openNotif(err.message, "error");
     }
-    openNotif(res.data.message, res.data.alert);
   };
   return (
     <>
@@ -171,8 +186,8 @@ export default function Profile({ openNotif, setToken }) {
               <Button type="submit" label="Edit" />
               <Button
                 type="reset"
-                label={<Text color="#E95065">Reset</Text>}
-                color="#E95065"
+                label={<Text color="red">Reset</Text>}
+                color="red"
               />
             </Box>
           </Form>
