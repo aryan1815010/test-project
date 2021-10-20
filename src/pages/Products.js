@@ -73,7 +73,6 @@ export default function Products({
       >
         {size !== "small" ? (
           <Box border={{ color: "dark-2" }} pad="small" fill={false}>
-            <Text>Showing {data.totalItems} results.</Text>
             <Heading level={3}>Price</Heading>
             <Box gap="small">
               <Stack>
@@ -124,7 +123,6 @@ export default function Products({
           </Box>
         ) : (
           <Box>
-            <Text>Showing {data.totalItems} results.</Text>
             <Button
               onClick={() => setOpenFilters(!openFilters)}
               label="Filters"
@@ -217,29 +215,34 @@ export default function Products({
                     />
                   ))}
           </Grid>
-          <Box
-            align="center"
-            alignSelf="center"
-            gap="small"
-            direction="row"
-            pad="medium"
-          >
-            <Text size="small">
-              Showing{" "}
-              {data.currentPage * 6 +
-                1 +
-                " - " +
-                (data.currentPage * 6 + data.products.length)}{" "}
-              of {data.totalItems}
-            </Text>
-            <Pagination
-              size="small"
-              numberItems={data.totalItems}
-              step={6}
-              onChange={handlePagination}
-              page={data.currentPage}
-            />
-          </Box>
+          {data.totalItems > 0 ? (
+            <Box
+              align="center"
+              alignSelf="center"
+              gap="small"
+              direction="row"
+              pad="medium"
+            >
+              <Text size="small">
+                Showing
+                {" " +
+                  (data.currentPage * 6 + 1) +
+                  " - " +
+                  (data.currentPage * 6 + data.products.length) +
+                  " "}
+                of {data.totalItems}
+              </Text>
+              <Pagination
+                size="small"
+                numberItems={data.totalItems}
+                step={6}
+                onChange={handlePagination}
+                page={data.currentPage + 1}
+              />
+            </Box>
+          ) : (
+            <Text>No results found</Text>
+          )}
         </Box>
       </Grid>
     </>
