@@ -151,7 +151,7 @@ export default function App() {
                     pad={{ horizontal: "small" }}
                   >
                     <Heading level="3" margin="none">
-                      Eg. Title
+                      Eg. Title iss53
                     </Heading>
                     <ThemeSwitcher />
                     {size !== "small" && (
